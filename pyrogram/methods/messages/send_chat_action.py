@@ -37,8 +37,9 @@ class ChatAction:
     PLAYING = raw.types.SendMessageGamePlayAction
     CHOOSE_CONTACT = raw.types.SendMessageChooseContactAction
     SPEAKING = raw.types.SpeakingInGroupCallAction
-    CANCEL = raw.types.SendMessageCancelAction
+    HISTORY_IMPORT = raw.types.SendMessageHistoryImportAction
     CHOOSE_STICKER = raw.types.SendMessageChooseStickerAction
+    CANCEL = raw.types.SendMessageCancelAction
 
 
 POSSIBLE_VALUES = list(map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), ChatAction.__dict__.keys())))
@@ -59,7 +60,8 @@ class SendChatAction(Scaffold):
                 text messages, *"upload_photo"* for photos, *"record_video"* or *"upload_video"* for videos,
                 *"record_audio"* or *"upload_audio"* for audio files, *"upload_document"* for general files,
                 *"find_location"* for location data, *"record_video_note"* or *"upload_video_note"* for video notes,
-                *"choose_contact"* for contacts, *"choose_sticker"* for stickers, *"playing"* for games, *"speaking"* for speaking in group calls or
+                *"choose_contact"* for contacts, *"playing"* for games, *"speaking"* for speaking in group calls or
+                *"history_import"* for importing history, *"choose_sticker"* for stickers or
                 *"cancel"* to cancel any chat action currently displayed.
 
         Returns:
@@ -90,7 +92,7 @@ class SendChatAction(Scaffold):
             raise ValueError("Invalid chat action '{}'. Possible values are: {}".format(
                 action, json.dumps(POSSIBLE_VALUES, indent=4))) from None
 
-        if "Upload" in action.__name__:
+        if "Upload" in action.__name__ or "History" in action.__name__:
             action = action(progress=0)
         else:
             action = action()
