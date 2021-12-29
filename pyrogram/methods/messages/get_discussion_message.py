@@ -16,30 +16,47 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Union
+
 from pyrogram import raw
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
 
 
-class GetMe(Scaffold):
-    async def get_me(self) -> "types.User":
-        """Get your own user identity.
+class GetDiscussionMessage(Scaffold):
+    async def get_discussion_message(
+        self,
+        chat_id: Union[int, str],
+        message_id: int,
+    ) -> "types.Message":
+        """Get the discussion message from the linked discussion group of a channel post.
 
-        Returns:
-            :obj:`~pyrogram.types.User`: Information about the own logged in user/bot.
+        Reply to the returned message to leave a comment on the linked channel post.
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
+            message_id (``int``):
+                Message id.
 
         Example:
             .. code-block:: python
 
-                me = app.get_me()
-                print(me)
+                # Get the discussion message
+                m = app.get_discussion_message(channel_id, message_id)
+
+                # Comment to the post by replying
+                m.reply("comment")
         """
         r = await self.send(
-            raw.functions.users.GetFullUser(
-                id=raw.types.InputUserSelf()
+            raw.functions.messages.GetDiscussionMessage(
+                peer=await self.resolve_peer(chat_id),
+                msg_id=message_id
             )
         )
 
         users = {u.id: u for u in r.users}
+        chats = {c.id: c for c in r.chats}
 
-        return types.User._parse(self, users[r.full_user.id])
+        return await types.Message._parse(self, r.messages[0], users, chats)

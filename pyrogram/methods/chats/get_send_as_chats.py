@@ -16,30 +16,48 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List, Union
+
 from pyrogram import raw
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
 
 
-class GetMe(Scaffold):
-    async def get_me(self) -> "types.User":
-        """Get your own user identity.
+class GetSendAsChats(Scaffold):
+    async def get_send_as_chats(
+        self,
+        chat_id: Union[int, str]
+    ) -> List["types.Chat"]:
+        """Get the list of "send_as" chats available.
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
 
         Returns:
-            :obj:`~pyrogram.types.User`: Information about the own logged in user/bot.
+            List[:obj:`~pyrogram.types.Chat`]: The list of chats.
 
         Example:
             .. code-block:: python
 
-                me = app.get_me()
-                print(me)
+                chats = app.get_send_as_chats(chat_id)
+                print(chats)
         """
         r = await self.send(
-            raw.functions.users.GetFullUser(
-                id=raw.types.InputUserSelf()
+            raw.functions.channels.GetSendAs(
+                peer=await self.resolve_peer(chat_id)
             )
         )
 
         users = {u.id: u for u in r.users}
+        chats = {c.id: c for c in r.chats}
 
-        return types.User._parse(self, users[r.full_user.id])
+        send_as_chats = types.List()
+
+        for p in r.peers:
+            if isinstance(p, raw.types.PeerUser):
+                send_as_chats.append(types.Chat._parse_chat(self, users[p.user_id]))
+            else:
+                send_as_chats.append(types.Chat._parse_chat(self, chats[p.channel_id]))
+
+        return send_as_chats

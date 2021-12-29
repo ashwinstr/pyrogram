@@ -16,30 +16,40 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Union
+
 from pyrogram import raw
-from pyrogram import types
 from pyrogram.scaffold import Scaffold
 
 
-class GetMe(Scaffold):
-    async def get_me(self) -> "types.User":
-        """Get your own user identity.
+class SetSendAsChat(Scaffold):
+    async def set_send_as_chat(
+        self,
+        chat_id: Union[int, str],
+        send_as_chat_id: Union[int, str]
+    ) -> bool:
+        """Set the default "send_as" chat for a chat.
+
+        Use :meth:`~pyrogram.Client.get_send_as_chats` to get all the "send_as" chats available for use.
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
+            send_as_chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the send_as chat.
 
         Returns:
-            :obj:`~pyrogram.types.User`: Information about the own logged in user/bot.
+            ``bool``: On success, true is returned
 
         Example:
             .. code-block:: python
 
-                me = app.get_me()
-                print(me)
+                app.set_send_as_chat(chat_id, send_as_chat_id)
         """
-        r = await self.send(
-            raw.functions.users.GetFullUser(
-                id=raw.types.InputUserSelf()
+        return await self.send(
+            raw.functions.messages.SaveDefaultSendAs(
+                peer=await self.resolve_peer(chat_id),
+                send_as=await self.resolve_peer(send_as_chat_id)
             )
         )
-
-        users = {u.id: u for u in r.users}
-
-        return types.User._parse(self, users[r.full_user.id])

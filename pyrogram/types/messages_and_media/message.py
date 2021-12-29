@@ -24,7 +24,7 @@ import pyrogram
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
-from pyrogram.errors import MessageIdsEmpty
+from pyrogram.errors import MessageIdsEmpty, PeerIdInvalid
 from pyrogram.parser import utils as parser_utils, Parser
 from ..object import Object
 from ..update import Update
@@ -127,6 +127,9 @@ class Message(Object, Update):
         author_signature (``str``, *optional*):
             Signature of the post author for messages in channels, or the custom title of an anonymous group
             administrator.
+
+        has_protected_content (``str``, *optional*):
+            True, if the message can't be forwarded.
 
         text (``str``, *optional*):
             For text messages, the actual UTF-8 text of the message, 0-4096 characters.
@@ -312,6 +315,7 @@ class Message(Object, Update):
         edit_date: int = None,
         media_group_id: str = None,
         author_signature: str = None,
+        has_protected_content: bool = None,
         text: Str = None,
         entities: List["types.MessageEntity"] = None,
         caption_entities: List["types.MessageEntity"] = None,
@@ -382,6 +386,7 @@ class Message(Object, Update):
         self.edit_date = edit_date
         self.media_group_id = media_group_id
         self.author_signature = author_signature
+        self.has_protected_content = has_protected_content
         self.text = text
         self.entities = entities
         self.caption_entities = caption_entities
@@ -435,6 +440,26 @@ class Message(Object, Update):
     ):
         if isinstance(message, raw.types.MessageEmpty):
             return Message(message_id=message.id, empty=True, client=client)
+
+        from_id = utils.get_raw_peer_id(message.from_id)
+        peer_id = utils.get_raw_peer_id(message.peer_id)
+        user_id = from_id or peer_id
+
+        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(message.peer_id, raw.types.PeerUser):
+            if from_id not in users or peer_id not in users:
+                try:
+                    r = await client.send(
+                        raw.functions.users.GetUsers(
+                            id=[
+                                await client.resolve_peer(from_id),
+                                await client.resolve_peer(peer_id)
+                            ]
+                        )
+                    )
+                except PeerIdInvalid:
+                    pass
+                else:
+                    users.update({i.id: i for i in r})
 
         if isinstance(message, raw.types.MessageService):
             action = message.action
@@ -499,14 +524,13 @@ class Message(Object, Update):
                 voice_chat_members_invited = types.VoiceChatMembersInvited._parse(client, action, users)
                 service_type = "voice_chat_members_invited"
 
-            user = utils.get_raw_peer_id(message.from_id) or utils.get_raw_peer_id(message.peer_id)
-            from_user = types.User._parse(client, users.get(user, None))
-            sender_chat = types.Chat._parse(client, message, users, chats) if not from_user else None
+            from_user = types.User._parse(client, users.get(user_id, None))
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
 
             parsed_message = Message(
                 message_id=message.id,
                 date=message.date,
-                chat=types.Chat._parse(client, message, users, chats),
+                chat=types.Chat._parse(client, message, users, chats, is_chat=True),
                 from_user=from_user,
                 sender_chat=sender_chat,
                 service=service_type,
@@ -553,8 +577,6 @@ class Message(Object, Update):
                         parsed_message.service = "game_high_score"
                     except MessageIdsEmpty:
                         pass
-
-
 
             return parsed_message
 
@@ -696,14 +718,13 @@ class Message(Object, Update):
                 else:
                     reply_markup = None
 
-            user = utils.get_raw_peer_id(message.from_id) or utils.get_raw_peer_id(message.peer_id)
-            from_user = types.User._parse(client, users.get(user, None))
-            sender_chat = types.Chat._parse(client, message, users, chats) if not from_user else None
+            from_user = types.User._parse(client, users.get(user_id, None))
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
 
             parsed_message = Message(
                 message_id=message.id,
                 date=message.date,
-                chat=types.Chat._parse(client, message, users, chats),
+                chat=types.Chat._parse(client, message, users, chats, is_chat=True),
                 from_user=from_user,
                 sender_chat=sender_chat,
                 text=(
@@ -727,6 +748,7 @@ class Message(Object, Update):
                     else None
                 ),
                 author_signature=message.post_author,
+                has_protected_content=message.noforwards,
                 forward_from=forward_from,
                 forward_sender_name=forward_sender_name,
                 forward_from_chat=forward_from_chat,
