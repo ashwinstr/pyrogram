@@ -171,10 +171,9 @@ def pyrogram_api():
             delete_messages
             get_messages
             get_media_group
-            get_history
-            get_history_count
-            read_history
-            iter_history
+            get_chat_history
+            get_chat_history_count
+            read_chat_history
             send_poll
             vote_poll
             stop_poll
@@ -185,7 +184,10 @@ def pyrogram_api():
             search_global
             search_global_count
             download_media
+            stream_media
             get_discussion_message
+            get_discussion_replies
+            get_discussion_replies_count
         """,
         chats="""
         Chats
@@ -208,11 +210,9 @@ def pyrogram_api():
             get_chat_member
             get_chat_members
             get_chat_members_count
-            iter_chat_members
             get_dialogs
-            iter_dialogs
             get_dialogs_count
-            update_chat_username
+            set_chat_username
             get_nearby_chats
             archive_chats
             unarchive_chats
@@ -235,12 +235,11 @@ def pyrogram_api():
         Users
             get_me
             get_users
-            get_profile_photos
-            get_profile_photos_count
-            iter_profile_photos
+            get_chat_photos
+            get_chat_photos_count
             set_profile_photo
             delete_profile_photos
-            update_username
+            set_username
             update_profile
             block_user
             unblock_user
@@ -254,14 +253,17 @@ def pyrogram_api():
             edit_chat_invite_link
             revoke_chat_invite_link
             delete_chat_invite_link
-            get_chat_invite_link_members
-            get_chat_invite_link_members_count
+            get_chat_invite_link_joiners
+            get_chat_invite_link_joiners_count
             get_chat_admin_invite_links
             get_chat_admin_invite_links_count
             get_chat_admins_with_invite_links
+            get_chat_join_requests
             delete_chat_admin_invite_links
             approve_chat_join_request
+            approve_all_chat_join_requests
             decline_chat_join_request
+            decline_all_chat_join_requests
         """,
         contacts="""
         Contacts
@@ -288,6 +290,13 @@ def pyrogram_api():
             set_game_score
             get_game_high_scores
             set_bot_commands
+            get_bot_commands
+            delete_bot_commands
+            set_bot_default_privileges
+            get_bot_default_privileges
+            set_chat_menu_button
+            get_chat_menu_button
+            answer_web_app_query
         """,
         authorization="""
         Authorization
@@ -309,7 +318,7 @@ def pyrogram_api():
         """,
         advanced="""
         Advanced
-            send
+            invoke
             resolve_peer
             save_file
         """
@@ -337,7 +346,7 @@ def pyrogram_api():
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
                     f2.write(".. automethod:: pyrogram.Client.{}()".format(method))
 
-            functions = ["idle"]
+            functions = ["idle", "compose"]
 
             for func in functions:
                 with open(root + "/{}.rst".format(func), "w") as f2:
@@ -359,12 +368,14 @@ def pyrogram_api():
             ChatPhoto
             ChatMember
             ChatPermissions
+            ChatPrivileges
             ChatInviteLink
             ChatAdminWithInviteLinks
             ChatEvent
             ChatEventFilter
             ChatMemberUpdated
             ChatJoinRequest
+            ChatJoiner
             Dialog
             Restriction
         """,
@@ -390,13 +401,14 @@ def pyrogram_api():
             PollOption
             Dice
             Reaction
-            VoiceChatScheduled
-            VoiceChatStarted
-            VoiceChatEnded
-            VoiceChatMembersInvited
+            VideoChatScheduled
+            VideoChatStarted
+            VideoChatEnded
+            VideoChatMembersInvited
+            WebAppData
         """,
-        bots_keyboard="""
-        Bots & Keyboards
+        bot_keyboards="""
+        Bot keyboards
             ReplyKeyboardMarkup
             KeyboardButton
             ReplyKeyboardRemove
@@ -407,7 +419,24 @@ def pyrogram_api():
             CallbackQuery
             GameHighScore
             CallbackGame
+            WebAppInfo
+            MenuButton
+            MenuButtonCommands
+            MenuButtonWebApp
+            MenuButtonDefault
+            SentWebAppMessage
+        """,
+        bot_commands="""
+        Bot commands
             BotCommand
+            BotCommandScope
+            BotCommandScopeDefault
+            BotCommandScopeAllPrivateChats
+            BotCommandScopeAllGroupChats
+            BotCommandScopeAllChatAdministrators
+            BotCommandScopeChat
+            BotCommandScopeChatAdministrators
+            BotCommandScopeChatMember
         """,
         input_media="""
         Input Media
@@ -423,11 +452,23 @@ def pyrogram_api():
         Inline Mode
             InlineQuery
             InlineQueryResult
+            InlineQueryResultCachedAudio
+            InlineQueryResultCachedDocument
+            InlineQueryResultCachedAnimation
+            InlineQueryResultCachedPhoto
+            InlineQueryResultCachedSticker
+            InlineQueryResultCachedVideo
+            InlineQueryResultCachedVoice
             InlineQueryResultArticle
-            InlineQueryResultPhoto
-            InlineQueryResultAnimation
             InlineQueryResultAudio
+            InlineQueryResultContact
+            InlineQueryResultDocument
+            InlineQueryResultAnimation
+            InlineQueryResultLocation
+            InlineQueryResultPhoto
+            InlineQueryResultVenue
             InlineQueryResultVideo
+            InlineQueryResultVoice
             ChosenInlineResult
         """,
         input_message_content="""
@@ -505,6 +546,7 @@ def pyrogram_api():
             Message.reply_video_note
             Message.reply_voice
             Message.get_media_group
+            Message.react
         """,
         chat="""
         Chat
@@ -519,12 +561,12 @@ def pyrogram_api():
             Chat.promote_member
             Chat.get_member
             Chat.get_members
-            Chat.iter_members
             Chat.add_members
             Chat.join
             Chat.leave
             Chat.mark_unread
             Chat.set_protected_content
+            Chat.unpin_all_messages
         """,
         user="""
         User

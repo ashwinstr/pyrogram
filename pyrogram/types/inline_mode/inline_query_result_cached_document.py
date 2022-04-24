@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -19,86 +19,88 @@
 from typing import Optional, List
 
 import pyrogram
-from pyrogram import raw, types, utils
+from pyrogram import raw, types, utils, enums
 from .inline_query_result import InlineQueryResult
+from ...file_id import FileId
 
 
 class InlineQueryResultCachedDocument(InlineQueryResult):
-    """Link to a file stored on the Telegram servers.
-    
-    By default, this file will be sent by the user with an optional caption. 
-    Alternatively, you can use input_message_content to send a message with the specified content instead of the file.
-    
+    """A link to a file stored on the Telegram servers.
+
+    By default, this file will be sent by the user with an optional caption. Alternatively, you can use
+    *input_message_content* to send a message with the specified content instead of the file.
+
     Parameters:
+        document_file_id (``str``):
+            A valid file identifier for the file.
+
         title (``str``):
             Title for the result.
-        
-        file_id (``str``):
-            Pass a file_id as string to send a media that exists on the Telegram servers.
-            
+
         id (``str``, *optional*):
             Unique identifier for this result, 1-64 bytes.
             Defaults to a randomly generated UUID4.
-            
+
         description (``str``, *optional*):
             Short description of the result.
-            
+
         caption (``str``, *optional*):
             Caption of the photo to be sent, 0-1024 characters.
-        
-        parse_mode (``str``, *optional*):
+
+        parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
             You can combine both syntaxes together.
-            Pass "markdown" or "md" to enable Markdown-style parsing only.
-            Pass "html" to enable HTML-style parsing only.
-            Pass None to completely disable style parsing.
 
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
-                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
-            
+            List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
         reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
-            Inline keyboard attached to the message.
-            
+            An InlineKeyboardMarkup object.
+
         input_message_content (:obj:`~pyrogram.types.InputMessageContent`):
-            Content of the message to be sent.
+            Content of the message to be sent instead of the photo.
     """
 
     def __init__(
         self,
+        document_file_id: str,
         title: str,
-        file_id: str,
         id: str = None,
         description: str = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
+        parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: List["types.MessageEntity"] = None,
         reply_markup: "types.InlineKeyboardMarkup" = None,
         input_message_content: "types.InputMessageContent" = None
     ):
         super().__init__("file", id, input_message_content, reply_markup)
 
-        self.file_id = file_id
+        self.document_file_id = document_file_id
         self.title = title
         self.description = description
         self.caption = caption
-        self.caption_entities = caption_entities
         self.parse_mode = parse_mode
+        self.caption_entities = caption_entities
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
 
     async def write(self, client: "pyrogram.Client"):
-        document = utils.get_input_file_from_file_id(self.file_id)
-
         message, entities = (await utils.parse_text_entities(
             client, self.caption, self.parse_mode, self.caption_entities
         )).values()
+
+        file_id = FileId.decode(self.document_file_id)
 
         return raw.types.InputBotInlineResultDocument(
             id=self.id,
             type=self.type,
             title=self.title,
             description=self.description,
-            document=document,
+            document=raw.types.InputDocument(
+                id=file_id.media_id,
+                access_hash=file_id.access_hash,
+                file_reference=file_id.file_reference,
+            ),
             send_message=(
                 await self.input_message_content.write(client, self.reply_markup)
                 if self.input_message_content

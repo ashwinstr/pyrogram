@@ -18,19 +18,18 @@
 
 from typing import Union
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
 
 
-class SendInlineBotResult(Scaffold):
+class SendInlineBotResult:
     async def send_inline_bot_result(
-        self,
+        self: "pyrogram.Client",
         chat_id: Union[int, str],
         query_id: int,
         result_id: str,
         disable_notification: bool = None,
-        reply_to_message_id: int = None,
-        hide_via: bool = None
+        reply_to_message_id: int = None
     ):
         """Send an inline bot result.
         Bot results can be retrieved using :meth:`~pyrogram.Client.get_inline_bot_results`
@@ -54,25 +53,21 @@ class SendInlineBotResult(Scaffold):
             reply_to_message_id (``bool``, *optional*):
                 If the message is a reply, ID of the original message.
 
-            hide_via (``bool``):
-                Sends the message with *via @bot* hidden.
-
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent inline result message is returned.
 
         Example:
             .. code-block:: python
 
-                app.send_inline_bot_result(chat_id, query_id, result_id)
+                await app.send_inline_bot_result(chat_id, query_id, result_id)
         """
-        return await self.send(
+        return await self.invoke(
             raw.functions.messages.SendInlineBotResult(
                 peer=await self.resolve_peer(chat_id),
                 query_id=query_id,
                 id=result_id,
                 random_id=self.rnd_id(),
                 silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id,
-                hide_via=hide_via or None
+                reply_to_msg_id=reply_to_message_id
             )
         )

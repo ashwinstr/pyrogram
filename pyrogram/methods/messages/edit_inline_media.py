@@ -19,17 +19,17 @@
 import os
 import re
 
+import pyrogram
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
 from pyrogram.file_id import FileType
-from pyrogram.scaffold import Scaffold
 from .inline_session import get_session
 
 
-class EditInlineMedia(Scaffold):
+class EditInlineMedia:
     async def edit_inline_media(
-        self,
+        self: "pyrogram.Client",
         inline_message_id: str,
         media: "types.InputMedia",
         reply_markup: "types.InlineKeyboardMarkup" = None
@@ -61,13 +61,13 @@ class EditInlineMedia(Scaffold):
                 # Bots only
 
                 # Replace the current media with a local photo
-                app.edit_inline_media(inline_message_id, InputMediaPhoto("new_photo.jpg"))
+                await app.edit_inline_media(inline_message_id, InputMediaPhoto("new_photo.jpg"))
 
                 # Replace the current media with a local video
-                app.edit_inline_media(inline_message_id, InputMediaVideo("new_video.mp4"))
+                await app.edit_inline_media(inline_message_id, InputMediaVideo("new_video.mp4"))
 
                 # Replace the current media with a local audio
-                app.edit_inline_media(inline_message_id, InputMediaAudio("new_audio.mp3"))
+                await app.edit_inline_media(inline_message_id, InputMediaAudio("new_audio.mp3"))
         """
         caption = media.caption
         parse_mode = media.parse_mode
@@ -179,7 +179,7 @@ class EditInlineMedia(Scaffold):
 
         session = await get_session(self, dc_id)
 
-        return await session.send(
+        return await session.invoke(
             raw.functions.messages.EditInlineBotMessage(
                 id=unpacked,
                 media=media,
